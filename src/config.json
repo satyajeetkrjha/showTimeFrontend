@@ -1,7 +1,7 @@
 {
   "jwtPrefix": "JWT ",
   "tokenKey": "token",
-  "apiUrl": "https://localhost:8080/api/showtime",
+  "apiUrl": "http://localhost:8080/api/",
   "version": "0.1.0",
   "env": "dev"
 }
