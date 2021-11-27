@@ -1,5 +1,5 @@
 import React from 'react'
-import { Route, Navigate } from 'react-router-dom'
+import { Route, Redirect } from 'react-router-dom'
 import auth from '../services/authService'
 const PrivateRoute = ({ path, component: Component, render, ...rest }) => {
     return (
@@ -9,7 +9,7 @@ const PrivateRoute = ({ path, component: Component, render, ...rest }) => {
 
                 if (!auth.getCurrentUser())
                     return (
-                        <Navigate
+                        <Redirect
                             to={{
                                 pathname: '/',
                                 state: { from: props.location }
@@ -22,4 +22,4 @@ const PrivateRoute = ({ path, component: Component, render, ...rest }) => {
     )
 }
 
-export default PrivateRoute
+export  default PrivateRoute;
