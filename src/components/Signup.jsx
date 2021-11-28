@@ -49,7 +49,7 @@ import {Button} from 'react';
     }
     handleInputChange=(event)=> {
         const target = event.target;
-        const value = target.type === 'checkbox' ? target.checked : target.value;
+        const value =  target.value;
         const name = target.name;
         console.log("val is ",event.target);
         this.setState({
