@@ -16,6 +16,8 @@ import {Button} from 'react';
             username:'',
             location:'',
             options:[],
+            textdisplay:false,
+            loactionId:1
         }
         this.handleInputChange = this.handleInputChange.bind(this);
 
@@ -23,6 +25,10 @@ import {Button} from 'react';
     componentDidMount() {
         this.callLocationsApi();
     }
+
+     redirectLogin =()=>{
+        this.props.history.push('/login')
+     }
 
 
     callLocationsApi = async () => {
@@ -61,7 +67,7 @@ import {Button} from 'react';
              locationId:locationData && locationData[0] && locationData[0].id
          });
      }
-     handleSubmit=(event)=> {
+     handleSubmit= async (event)=> {
 
          event.preventDefault();
          console.log("state here ", this.state);
@@ -76,7 +82,7 @@ import {Button} from 'react';
 
         console.log("obj is ",obj);
          try{
-             const response =  http.post('auth/signup', {
+             const response = await http.post('auth/signup', {
                 username :this.state.username,
                 firstName : this.state.firstName,
                 lastName : this.state.lastName,
@@ -85,9 +91,15 @@ import {Button} from 'react';
                 locationId :this.state.locationId
 
              })
+             console.log("response",response);
+             if(response && response.status == 200){
+                 this.setState({
+                     textdisplay:true
+                 })
+             }
          }
          catch(ex){
-
+            console.log("error user registeration",ex);
          }
 
      }
@@ -96,11 +108,12 @@ import {Button} from 'react';
     render(){
         console.log("locations",this.state);
         const {classes} = this.props;
-        const {options} = this.state ;
+        const {options,textdisplay} = this.state ;
 
 
         return(
             <Root>
+            <FirstRoot>
               <form onSubmit={this.handleSubmit}>
                   <div>
                       <Names>
@@ -128,7 +141,7 @@ import {Button} from 'react';
                       <input required={true} name="username"  value={this.state.username} onChange={this.handleInputChange}/>
                   </div>
 
-                      <div style={{marginTop:10,width:500}}>
+                      <div style={{marginTop:10,width:'200px'}}>
                       <select  placeholder="select a city" value={this.state.location} onChange={this.handleChange}>
 
                           {
@@ -145,22 +158,42 @@ import {Button} from 'react';
 
                       </select>
                       </div>
-                  <button type="submit">SignUp</button>
+                  <button style={{marginTop:10}} type="submit">SignUp</button>
+                  {
+                      textdisplay != true?
+                          <div style={{marginTop:10}}>
+                              Verify your email and click on <button onClick ={this.redirectLogin}>Login</button>
+                          </div>
+                          :
+                          null
+
+                  }
               </form>
+            </FirstRoot>
 
             </Root>
+
+
         )
     }
 }
 
-const Root = styled.div`
+const FirstRoot = styled.div`
   width: 100%;
   height: 100%;
   min-height: 100vh;
   background-color: #ffffff;
   box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
  
 `;
+
+ const Root = styled.div`
+   
+ `
+
  const Names = styled.div`
    font-size: 18px;
    line-height: 1.75;
