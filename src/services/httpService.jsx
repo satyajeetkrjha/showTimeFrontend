@@ -13,12 +13,13 @@ axios.interceptors.request.use(
         if (!auth.getCurrentUser()) localStorage.removeItem(config.tokenKey)
 
         const token = localStorage.getItem(config.tokenKey)
+        /*
         if (token) {
             request.headers['Authorization'] = config.jwtPrefix + token
         }
 
         let originalRequest = request
-
+        /*
         const tokenIsExpired = auth.IsTokenAboutToExpired()
 
         if (tokenIsExpired &&  !isRefreshCalled) {
@@ -33,6 +34,8 @@ axios.interceptors.request.use(
                 return Promise.reject(error)
             }
         }
+        */
+
         return request
     },
     error => {

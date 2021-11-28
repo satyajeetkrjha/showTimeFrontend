@@ -22,8 +22,11 @@ function getCurrentUser() {
 function issueToken() {
     return new Promise((resolve, reject) => {
         try {
-            const response = http.post('refresh/token', {
-                token: localStorage.getItem(tokenKey)
+            let refreshToken = localStorage.getItem('refreshToken');
+            let username=localStorage.getItem('username');
+            const response = http.post('auth/refresh/token', {
+                refreshToken: localStorage.getItem('refreshToken'),
+                username:localStorage.getItem('username')
             })
             resolve(response)
         } catch (ex) {
@@ -40,7 +43,11 @@ function IsTokenAboutToExpired() {
     const currDate = new Date().getTime() / 1000
 
     //Refresh Token if tokenLive remains 30 min only
-    if (exp - currDate <= 1200 && exp - currDate >= 0) {
+    console.log("exp",exp);
+    console.log("currDate ",currDate);
+    console.log("diff ",exp-currDate);
+
+    if (exp - currDate >= 1200000 ) {
         return true
     }
     return false
