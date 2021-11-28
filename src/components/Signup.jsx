@@ -160,7 +160,7 @@ import {Button} from 'react';
                       </div>
                   <button style={{marginTop:10}} type="submit">SignUp</button>
                   {
-                      textdisplay != true?
+                      textdisplay == true?
                           <div style={{marginTop:10}}>
                               Verify your email and click on <button onClick ={this.redirectLogin}>Login</button>
                           </div>
