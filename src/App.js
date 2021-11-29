@@ -14,7 +14,7 @@ class App extends React.Component{
 
                    <PrivateRoute path="/userprofile"
                                  component={UserProfile}/>
-                   <PrivateRoute path="/dashboard"
+                   <Route path="/dashboard"
                                  component={DashBoard}/>
                    <Route path="/signup" component={Signup}/>
                    <Route path="/login" component={Login}/>

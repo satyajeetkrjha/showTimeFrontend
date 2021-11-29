@@ -10,7 +10,9 @@ axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded
 
 axios.interceptors.request.use(
     async request => {
-        if (!auth.getCurrentUser()) localStorage.removeItem(config.tokenKey)
+        /*
+        if (!auth.getCurrentUser())
+            localStorage.removeItem(config.tokenKey)
 
         const token = localStorage.getItem(config.tokenKey)
         /*

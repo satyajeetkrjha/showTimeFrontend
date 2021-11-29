@@ -11,6 +11,12 @@ class Login extends React.Component{
             requestFailed:false
         }
     }
+    componentDidMount() {
+        if(localStorage.getItem('token')!=null){
+            this.props.history.push('/dashboard')
+        }
+    }
+
     handleInputChange=(event)=> {
         const target = event.target;
         const value = target.value;
