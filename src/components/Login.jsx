@@ -38,6 +38,7 @@ class Login extends React.Component{
                 let data = response && response.data;
                 localStorage.setItem('token', data && data.authenticationToken);
                 localStorage.setItem('username',data && data.username);
+                localStorage.setItem('id',data && data.use)
                 localStorage.setItem('refreshToken', data && data.refreshToken)
                 localStorage.setItem('expiresAt', data && data.expiresAt);
                 this.props.history.push('/dashboard')

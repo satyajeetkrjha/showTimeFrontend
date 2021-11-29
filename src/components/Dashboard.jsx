@@ -10,12 +10,51 @@ export default class Dashboard extends  React.Component{
         this.state = {
             categories: [],
             selectedCategory: {},
-            userswithcategories: []
-
+            userswithcategories: [],
+            userData: {
+                userId:null,
+                firstName:null,
+                lastName:null
+            },
+            suggestions:[]
         }
+
+
     }
     componentDidMount () {
         this.callCategoriesApi();
+        this.callUserDataApi();
+
+    }
+    callSuggestionsApi = async (data)=>{
+        let baseUrl = config.apiUrl;
+        let url = baseUrl +'showtime/categorysuggestions/';
+        url+=data.userId;
+        axios.get(url)
+            .then((response)=>{
+                this.setState({
+                  suggestions: response && response.data
+                })
+            })
+
+
+    }
+    callUserDataApi=()=>{
+        let baseUrl = config.apiUrl;
+        let url = baseUrl + 'auth/info/';
+        url += localStorage.getItem('username');
+        axios.get(url)
+            .then((response)=>{
+                this.setState({
+                    userData : response && response.data
+                },()=>{
+                    this.callSuggestionsApi(this.state.userData);
+                })
+
+            })
+
+
+
     }
 
     callCategoriesApi = async()=>{
@@ -61,7 +100,7 @@ export default class Dashboard extends  React.Component{
     render(){
         console.log("categories..." ,this.state);
         let categoryName;
-        const {categories,userswithcategories} = this.state;
+        const {categories,userswithcategories,suggestions} = this.state;
         return(
             <div>
             <div style={{
@@ -96,11 +135,19 @@ export default class Dashboard extends  React.Component{
 
 
             </div>
+
+              <div style={{
+                  display:'flex',
+                  justifyContent :'space-between'
+
+
+              }}>
                 <div style={{
                     backgroundColor: 'red',
                     color: 'white' ,
                     width:500,
-                    height:600
+                    height:600,
+                    marginLeft:20
                 }}>
                     <p>USERS FOLLOWING {
                         this.state.selectedCategory.categoryName &&
@@ -121,9 +168,37 @@ export default class Dashboard extends  React.Component{
                         }
 
                     </div>
+                </div>
+                <div style={{
+                    backgroundColor: 'green',
+                    color: 'white' ,
+                    width:500,
+                    marginRight:20
+
+
+                }}>
+                    Categories Suggested For You
+                    <div>
+                        {
+                            suggestions && suggestions.map ((item)=>{
+                                return(
+                                    <div>
+                                        <p> {item.categoryName}</p>
+                                        <Button onClick={()=>{this.categoryClick(item)}}>
+                                            Follow
+                                        </Button>
+                                    </div>
+                                )
+                            })
+
+                        }
+                    </div>
 
                 </div>
-            </div>
+              </div>
+                </div>
+
+
         )
     }
 
