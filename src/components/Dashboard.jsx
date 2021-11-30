@@ -4,6 +4,8 @@ import http from "../services/httpService";
 import axios from 'axios'
 import config from '../config.json'
 import styled from "styled-components";
+import headerImage from './Images/Header.png';
+
 export default class Dashboard extends  React.Component{
     constructor(props) {
         super(props);
@@ -147,6 +149,8 @@ export default class Dashboard extends  React.Component{
         const {categories,userswithcategories,suggestions,events} = this.state;
         return(
             <div>
+                <img class="headerimage" src='Header.png' alt="not dsiplaying Header Image" style={{width: '100%', height: '194px'}}/>
+            <div>
             <div style={{
                 display:'flex',
                 flexdirection:'row',
@@ -273,7 +277,7 @@ export default class Dashboard extends  React.Component{
                 </div>
               </div>
                 </div>
-
+</div>
 
         )
     }
