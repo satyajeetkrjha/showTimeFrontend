@@ -16,7 +16,9 @@ export default class Dashboard extends  React.Component{
                 firstName:null,
                 lastName:null
             },
-            suggestions:[]
+            locationId:null,
+            suggestions:[],
+            events :[]
         }
 
 
@@ -25,11 +27,31 @@ export default class Dashboard extends  React.Component{
         this.callCategoriesApi();
         this.callUserDataApi();
 
+
+
+
+    }
+    callEvents =()=>{
+        let baseUrl = config.apiUrl;
+        let userData = JSON.parse(localStorage.getItem('userData'));
+
+        let url = baseUrl +'auth/events?';
+        const {selectedCategory} = this.state ;
+        url+='category='+ selectedCategory.categoryId +'&';
+
+        url+='location='+ userData.locationId;
+
+        axios.get(url).then((response)=>{
+            this.setState({
+                events :response && response.data
+            })
+        })
     }
     callSuggestionsApi = async (data)=>{
         let baseUrl = config.apiUrl;
         let url = baseUrl +'showtime/categorysuggestions/';
         url+=data.userId;
+        localStorage.setItem("userData",JSON.stringify(data));
         axios.get(url)
             .then((response)=>{
                 this.setState({
@@ -46,7 +68,8 @@ export default class Dashboard extends  React.Component{
         axios.get(url)
             .then((response)=>{
                 this.setState({
-                    userData : response && response.data
+                    userData : response && response.data,
+                    locationId :response && response.data && response.data.locationId
                 },()=>{
                     this.callSuggestionsApi(this.state.userData);
                 })
@@ -92,15 +115,36 @@ export default class Dashboard extends  React.Component{
         this.setState({
             selectedCategory:category
         },()=>{
-            this.calluserwithcategories(category)
+            this.calluserwithcategories(category);
+            this.callEvents();
         })
 
+    }
+    followCategory =(category)=>{
+        let categoryId = category.categoryId;
+        let userId =  this.state.userData && this.state.userData.userId;
+
+        let baseUrl = config.apiUrl;
+        let url = baseUrl +'showtime/usercategory';
+
+        let data={
+            'categoryId':categoryId,
+            'userId':userId
+        }
+
+        axios.post(url, data)
+            .then((response)=>{
+                let suggestions = this.state.suggestions.filter((item)=> item.categoryId != categoryId);
+                this.setState({
+                    suggestions:suggestions
+                })
+            })
     }
 
     render(){
         console.log("categories..." ,this.state);
         let categoryName;
-        const {categories,userswithcategories,suggestions} = this.state;
+        const {categories,userswithcategories,suggestions,events} = this.state;
         return(
             <div>
             <div style={{
@@ -169,6 +213,38 @@ export default class Dashboard extends  React.Component{
 
                     </div>
                 </div>
+
+
+                  <div style={{
+                      backgroundColor: 'blue',
+                      color: 'white' ,
+                      width:500,
+                      height:600,
+                      marginLeft:20
+                  }}>
+                      <p>Events for this {
+                          this.state.selectedCategory.categoryName &&
+                          this.state.selectedCategory.categoryName.toUpperCase()
+                      }</p>
+                      <div >
+                          {
+
+                              events && events.map((item)=>{
+                                  return(
+                                      <div>
+                                          <p>{item.eventName}  </p>
+                                          <p>{item.startDate}</p>
+                                          <p>{item.endDate}</p>
+
+                                      </div>
+                                  )
+                              })
+
+
+                          }
+
+                      </div>
+                  </div>
                 <div style={{
                     backgroundColor: 'green',
                     color: 'white' ,
@@ -184,7 +260,7 @@ export default class Dashboard extends  React.Component{
                                 return(
                                     <div>
                                         <p> {item.categoryName}</p>
-                                        <Button onClick={()=>{this.categoryClick(item)}}>
+                                        <Button onClick={()=>{this.followCategory(item)}}>
                                             Follow
                                         </Button>
                                     </div>
