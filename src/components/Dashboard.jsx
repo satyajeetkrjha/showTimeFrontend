@@ -5,6 +5,8 @@ import axios from 'axios'
 import config from '../config.json'
 import styled from "styled-components";
 import headerImage from './Images/Header.png';
+import { green } from '@material-ui/core/colors';
+
 
 export default class Dashboard extends  React.Component{
     constructor(props) {
@@ -12,6 +14,7 @@ export default class Dashboard extends  React.Component{
         this.state = {
             categories: [],
             selectedCategory: {},
+            selectedLocation:{},
             userswithcategories: [],
             userData: {
                 userId:null,
@@ -28,11 +31,19 @@ export default class Dashboard extends  React.Component{
     componentDidMount () {
         this.callCategoriesApi();
         this.callUserDataApi();
-
-
-
-
     }
+
+    //SS
+    SearchBox = (props) => {
+        return(
+            <input type ='Search'
+            className ='search'
+            placeholder={props.placeholder}
+            onChange = {props.handlechange}
+            />
+        )
+    }
+
     callEvents =()=>{
         let baseUrl = config.apiUrl;
         let userData = JSON.parse(localStorage.getItem('userData'));
@@ -111,6 +122,21 @@ export default class Dashboard extends  React.Component{
 
             })
     }
+    //SS - need to modify parsing of locationId
+    calluserwithlocation =(location)=>{
+        let userData = JSON.parse(localStorage.getItem('userData'));
+        let baseUrl = config.apiUrl;
+        let url = baseUrl +'showtime/getuserlocation/';
+        url+=userData.locationId;
+        axios.get(url)
+            .then((response)=>{
+                console.log("response...",response);
+                this.setState({
+                    userswithcategories: response && response.data
+                })
+
+            })
+    }
 
     categoryClick =(category)=>{
         console.log("category ....", category);
@@ -121,6 +147,17 @@ export default class Dashboard extends  React.Component{
             this.callEvents();
         })
 
+    }
+
+    //SS
+    locationClick = (location)=>{
+        console.log("Location ....", location);
+        this.setState({
+            selectedLocation:location
+        },()=>{
+            this.calluserwithlocation(location);
+            this.callEvents();
+        })
     }
     followCategory =(category)=>{
         let categoryId = category.categoryId;
@@ -152,6 +189,8 @@ export default class Dashboard extends  React.Component{
                 <img class="headerimage" src='Header.png' alt="not dsiplaying Header Image" style={{width: '100%', height: '194px'}}/>
             <div>
             <div style={{
+                backgroundColor:'rgb(36 41 75)',
+                color:'white',
                 display:'flex',
                 flexdirection:'row',
                 justifyContent: 'space-around',
@@ -177,13 +216,67 @@ export default class Dashboard extends  React.Component{
                     })
 
                 }
+                
 
+            </div>
+            <div style={{
+                paddingTop:20,
+                
+            }}>
+                
+                <input style={{
+                    fontSize:'20px',
+                    fontFamily:'serif',
+                    fontWeight:500,
+                    marginLeft:725,
+                    width: 350,
+                    height: 30
+                }} type="text" placeholder="Search for location"/>
 
-
-
+                <Button style={{
+                    marginLeft: 10,
+                    backgroundColor:'green',
+                }}>
+                Search
+                </Button>
 
             </div>
 
+            <div style={{
+                backgroundColor: 'white',
+                color:'Black',
+                display:'flex',
+                flexdirection:'column',
+                justifyContent: 'space-around',
+                //paddingTop:10,
+                fontSize:'28px',
+                fontFamily:'serif',
+                fontWeight:600,
+                marginLeft:-414
+                }}>
+                    <p>Recommended Events happening nearby you
+                    {
+                          this.state.selectedCategory.categoryName &&
+                          this.state.selectedCategory.categoryName.toUpperCase()
+                      }
+                    </p>
+                        <div >
+                          {
+
+                              events && events.map((item)=>{
+                                  return(
+                                      <div>
+                                          <p>{item.eventName}  </p>
+                                          <p>{item.startDate}</p>
+                                          <p>{item.endDate}</p>
+
+                                      </div>
+                                  )
+                              })
+                          }
+
+                        </div>
+            </div>
               <div style={{
                   display:'flex',
                   justifyContent :'space-between'
@@ -285,7 +378,6 @@ export default class Dashboard extends  React.Component{
 }
 
 const Button = styled.button`
-  background-color: royalblue;
   width: 170px;
   color: white;
   font-size: 15px;
@@ -294,3 +386,16 @@ const Button = styled.button`
   margin: 10px 0px;
   cursor: pointer;
 `;
+
+//SS
+/*
+const SearchButton = styled.button
+`
+    fontSize:20px;
+    fontFamily:serif;
+    fontWeight:500;
+    marginLeft:20;
+    width: 350;
+    height: 50;
+`
+*/
