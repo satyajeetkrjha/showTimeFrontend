@@ -23,6 +23,7 @@ import {Button} from 'react';
 
     }
     componentDidMount() {
+        localStorage.clear();
         this.callLocationsApi();
     }
 

@@ -4,6 +4,23 @@ import http from "../services/httpService";
 import axios from 'axios'
 import config from '../config.json'
 import styled from "styled-components";
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardActions from '@mui/material/CardActions';
+import CardContent from '@mui/material/CardContent';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import {Toolbar} from  "@material-ui/core";
+import ProfileImageBox from 'react-profile-image-box'
+import {
+    Accordion,
+    AccordionItem,
+    AccordionItemHeading,
+    AccordionItemButton,
+    AccordionItemPanel,
+} from 'react-accessible-accordion';
+import 'react-accessible-accordion/dist/fancy-example.css';
+
 export default class Dashboard extends  React.Component{
     constructor(props) {
         super(props);
@@ -18,7 +35,11 @@ export default class Dashboard extends  React.Component{
             },
             locationId:null,
             suggestions:[],
-            events :[]
+            events :[],
+            src: "https://gravatar.com/avatar/2b2c67c5623f5c6148b3cfe4eeb53b83?s=400&d=robohash&r=x",
+            interested:[],
+            userInterested:[]
+
         }
 
 
@@ -31,6 +52,8 @@ export default class Dashboard extends  React.Component{
 
 
     }
+
+
     callEvents =()=>{
         let baseUrl = config.apiUrl;
         let userData = JSON.parse(localStorage.getItem('userData'));
@@ -44,9 +67,49 @@ export default class Dashboard extends  React.Component{
         axios.get(url).then((response)=>{
             this.setState({
                 events :response && response.data
+            },()=>{
+                console.log("callback ....", this.state.events);
+                let eventId = this.state.events && this.state.events[0] && this.state.events[0].eventId;
+                this.callInterestedUsers(eventId);
             })
         })
     }
+
+    callInterestedUsers=(eventId)=>{
+
+
+
+        const {userInterested} = this.state ;
+        // check if this eventId already exists in state
+        function eventIdExists(eventId) {
+            return userInterested.some(function(el) {
+                return el.eventId === eventId;
+            });
+        }
+        if(!eventIdExists(eventId)){
+            console.log("loggging ........");
+            let baseUrl = config.apiUrl;
+            let url = baseUrl+'showtime/interested/'+eventId;
+
+            axios.get(url).then((response)=>{
+                console.log("interestedusers .....", response);
+                let data = response && response.data;
+                console.log("usersinterested..", this.state.userInterested);
+                console.log("data below is ...", data);
+
+                let mergedData = [...this.state.userInterested,...data];
+                console.log("mergedData...",mergedData);
+                this.setState({
+                    userInterested :mergedData
+                })
+
+            })
+        }
+
+    }
+
+
+
     callSuggestionsApi = async (data)=>{
         let baseUrl = config.apiUrl;
         let url = baseUrl +'showtime/categorysuggestions/';
@@ -97,6 +160,7 @@ export default class Dashboard extends  React.Component{
 
     }
     calluserwithcategories =(category)=>{
+
         let baseUrl = config.apiUrl;
         let url = baseUrl +'showtime/getusercategories/';
         url+=category.categoryId;
@@ -120,6 +184,7 @@ export default class Dashboard extends  React.Component{
         })
 
     }
+
     followCategory =(category)=>{
         let categoryId = category.categoryId;
         let userId =  this.state.userData && this.state.userData.userId;
@@ -141,20 +206,74 @@ export default class Dashboard extends  React.Component{
             })
     }
 
+
+    markInterested =(data)=>{
+        console.log("data is ", data);
+        let userData = JSON.parse(localStorage.getItem('userData'));
+
+        console.log("userData",userData);
+
+        let dataToApi = {
+            'userId':userData && userData.userId,
+            'eventId':data && data.eventId
+        }
+        console.log("dataToApi",dataToApi);
+        let baseUrl = config.apiUrl;
+        let url = baseUrl +'showtime/interested';
+        axios.post(url,dataToApi)
+            .then((response)=>{
+               this.setState({
+                  interested : [...this.state.interested,dataToApi.eventId]
+               })
+            })
+
+
+
+
+    }
+
+
     render(){
-        console.log("categories..." ,this.state);
+        console.log("state" ,this.state);
         let categoryName;
-        const {categories,userswithcategories,suggestions,events} = this.state;
+        const {categories,userswithcategories,suggestions,events,userData} = this.state;
         return(
-            <div>
+            <div style={{backgroundColor:'black' ,minHeight:"1000px"}} >
+                <header >
+
+                        <Toolbar style={{backgroundColor:'red'}}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'center'
+                            }}>
+                                <Typography>
+                                    Show Time
+                                </Typography>
+                            </div>
+
+                        </Toolbar>
+                </header>
+                <ProfileImageBox
+                    alt="Alt Text"
+
+                    onFileChange={(e) => this.onFileChange(e, {type: 'user-image'})}
+                    src={this.state.src}/>
+                <Typography style={{color:'green'}}>
+                    {userData.firstName} {userData.lastName}
+                </Typography>
+                <StyledButton>
+                    Logout
+                </StyledButton>
             <div style={{
                 display:'flex',
-                flexdirection:'row',
-                justifyContent: 'space-around',
+                flexDirection:'row',
                 paddingTop:20,
+
+
              
 
             }}>
+
                 {
                     categories && categories.map((category)=>{
                         let categoryName = category.categoryName;
@@ -165,9 +284,9 @@ export default class Dashboard extends  React.Component{
                                 paddingLeft:'10px',
                                 paddingRight:'10px'
                             }}>
-                             <Button onClick={()=>{this.categoryClick(category)}}>
+                             <StyledButton onClick={()=>{this.categoryClick(category)}}>
                                  {categoryName.toUpperCase()}
-                             </Button>
+                             </StyledButton>
                             </div>
                         )
                     })
@@ -186,57 +305,141 @@ export default class Dashboard extends  React.Component{
 
 
               }}>
+
+
                 <div style={{
-                    backgroundColor: 'red',
-                    color: 'white' ,
-                    width:500,
-                    height:600,
+
                     marginLeft:20
                 }}>
-                    <p>USERS FOLLOWING {
-                        this.state.selectedCategory.categoryName &&
-                        this.state.selectedCategory.categoryName.toUpperCase()
-                    }</p>
-                    <div >
-                        {
 
-                                userswithcategories && userswithcategories.map((item)=>{
-                                    return(
-                                        <div>
-                                           <p>{item.firstName} {'   '} {item.lastName}  </p>
-                                        </div>
-                                    )
+
+                    <Typography style={{color:'white'}}>
+                        User following this category
+                    </Typography>
+
+                        {
+                            userswithcategories && userswithcategories.map((item)=>{
+                                return(
+                                    <Card style={{margin:20}}>
+                                    <CardContent>
+                                        <Typography style={{color:'blue'}}>
+                                            {item.firstName} {'   '} {item.lastName}
+                                        </Typography>
+                                    </CardContent>
+                                    </Card>
+                                )
                             })
 
 
                         }
 
-                    </div>
                 </div>
+
+                  <Accordion allowMultipleExpanded>
+
+
+                  {
+                      this.state.events && this.state.events.map((item) =>{
+
+                          let InterestedUsers = this.state.userInterested
+                              &&
+                              this.state.userInterested.filter((data)=> data.eventId === item.eventId);
+                          console.log("InterestedUser...",InterestedUsers);
+
+
+                          return(
+                              <AccordionItem onClick={()=> this.callInterestedUsers(item && item.eventId)} style={{'width':'200px'}}>
+                                  <AccordionItemHeading>
+                                  <AccordionItemButton >
+                                    Users Following  {item && item.eventName}
+                                  </AccordionItemButton>
+                                  </AccordionItemHeading>
+                                  {console.log("inside jsx", InterestedUsers)}
+
+                                  <AccordionItemPanel style={{'color':"darkgreen"}}>
+                                      {
+                                          <div>
+                                              {
+                                                  this.state.userInterested && this.state.userInterested.filter((data)=>data.eventId == item.eventId).map((data)=>{
+
+                                                      return(
+                                                          <div>
+                                                              {data.firstName}+{data.lastName}
+                                                          </div>
+                                                      )
+                                                  })
+                                              }
+                                          </div>
+
+
+                                      }
+
+                                  </AccordionItemPanel>
+
+                              </AccordionItem>
+
+                          )
+                      })
+
+
+                  }
+                  </Accordion>
+
+
+
+
+
+
+
+
 
 
                   <div style={{
-                      backgroundColor: 'blue',
-                      color: 'white' ,
-                      width:500,
-                      height:600,
-                      marginLeft:20
+                      margin:20
                   }}>
                       <p>Events for this {
                           this.state.selectedCategory.categoryName &&
                           this.state.selectedCategory.categoryName.toUpperCase()
                       }</p>
+
                       <div >
                           {
 
                               events && events.map((item)=>{
                                   return(
-                                      <div>
-                                          <p>{item.eventName}  </p>
-                                          <p>{item.startDate}</p>
-                                          <p>{item.endDate}</p>
+                                      <Card sx={{ minWidth: 275,margin:10 }}>
+                                          <CardContent>
+                                              <div  style={{display:'flex'}}>
+                                                  <Typography>
+                                                      Event Name :
+                                                  </Typography>
+                                                  <Typography>
+                                                      {'  '} {item.eventName}
+                                                  </Typography>
+                                              </div>
 
-                                      </div>
+                                              <div style={{display:'flex'}}>
+                                                  <Typography>
+                                                      StartDate :
+                                                  </Typography>
+                                                  <Typography>
+                                                      {' '} {item.startDate}
+                                                  </Typography>
+                                              </div>
+                                             <div style={{display:'flex'}}>
+                                                 <Typography>
+                                                     EndDate :
+                                                 </Typography>
+                                                 <Typography>
+                                                     {' '}{item.endDate}
+                                                 </Typography>
+                                             </div>
+
+                                          </CardContent>
+                                          <CardActions>
+                                              <Button onClick ={()=>{this.markInterested(item)}} size="small">Click to Mark Interested</Button>
+                                          </CardActions>
+                                      </Card>
                                   )
                               })
 
@@ -246,10 +449,10 @@ export default class Dashboard extends  React.Component{
                       </div>
                   </div>
                 <div style={{
-                    backgroundColor: 'green',
+
                     color: 'white' ,
-                    width:500,
-                    marginRight:20
+
+                    margin:20
 
 
                 }}>
@@ -258,12 +461,18 @@ export default class Dashboard extends  React.Component{
                         {
                             suggestions && suggestions.map ((item)=>{
                                 return(
-                                    <div>
-                                        <p> {item.categoryName}</p>
-                                        <Button onClick={()=>{this.followCategory(item)}}>
-                                            Follow
-                                        </Button>
-                                    </div>
+
+                                    <Card style={{margin:20}}>
+                                        <CardContent>
+                                            <Typography>
+                                                {item.categoryName}
+                                            </Typography>
+                                            <StyledButton onClick={()=>{this.followCategory(item)}}>
+                                                Follow
+                                            </StyledButton>
+                                        </CardContent>
+                                    </Card>
+
                                 )
                             })
 
@@ -278,9 +487,10 @@ export default class Dashboard extends  React.Component{
         )
     }
 
+
 }
 
-const Button = styled.button`
+const StyledButton = styled.button`
   background-color: royalblue;
   width: 170px;
   color: white;
