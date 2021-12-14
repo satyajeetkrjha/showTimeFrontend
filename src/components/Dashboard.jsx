@@ -38,7 +38,10 @@ export default class Dashboard extends  React.Component{
             events :[],
             src: "https://gravatar.com/avatar/2b2c67c5623f5c6148b3cfe4eeb53b83?s=400&d=robohash&r=x",
             interested:[],
-            userInterested:[]
+            userInterested:[],
+            eventsFollowed:[],
+            options:[],
+            currentLocation :null
 
         }
 
@@ -47,10 +50,49 @@ export default class Dashboard extends  React.Component{
     componentDidMount () {
         this.callCategoriesApi();
         this.callUserDataApi();
+        this.callLocationsApi();
+
+
+
+    }
+    currentLocation =(data)=>{
+
+        let userData = JSON.parse(localStorage.getItem('userData'));
+        let locationId = userData && userData.locationId;
+        let baseUrl = config.apiUrl;
+
+        let url ;
+        if(!locationId){
+            url = baseUrl+'showtime/location/'+data.locationId;
+        }
+        else{
+            url = baseUrl +'showtime/location/'+ locationId;
+        }
 
 
 
 
+        axios.get(url).then((response)=>{
+            this.setState({
+                currentLocation : response && response.data
+            })
+        })
+    }
+    callLocationsApi = async () => {
+        let url = 'showtime/locations';
+        const response = await http.get(url)
+        let locationdata = response && response.data ;
+        let optionsArray =[];
+        for(let index =0 ;index <locationdata.length;index++){
+            optionsArray.push({
+                'value':locationdata[index].locationName,
+                'label':locationdata[index].locationName,
+                'id':locationdata[index].locationId
+            })
+        }
+        this.setState({
+            options:optionsArray
+        })
     }
 
 
@@ -60,15 +102,21 @@ export default class Dashboard extends  React.Component{
 
         let url = baseUrl +'auth/events?';
         const {selectedCategory} = this.state ;
-        url+='category='+ selectedCategory.categoryId +'&';
 
-        url+='location='+ userData.locationId;
+        url+='category='+ selectedCategory.categoryId +'&';
+        url+='location='+ (userData && userData.locationId);
 
         axios.get(url).then((response)=>{
+            let eventResponse = response && response.data;
+
+
+
+
+
             this.setState({
                 events :response && response.data
             },()=>{
-                console.log("callback ....", this.state.events);
+                console.log("callback events", this.state.events ,this.state);
                 let eventId = this.state.events && this.state.events[0] && this.state.events[0].eventId;
                 this.callInterestedUsers(eventId);
             })
@@ -89,22 +137,26 @@ export default class Dashboard extends  React.Component{
         if(!eventIdExists(eventId)){
             console.log("loggging ........");
             let baseUrl = config.apiUrl;
-            let url = baseUrl+'showtime/interested/'+eventId;
+            let url ;
+            if(eventId){
+                url = baseUrl+'showtime/interested/'+eventId;
 
-            axios.get(url).then((response)=>{
-                console.log("interestedusers .....", response);
-                let data = response && response.data;
-                console.log("usersinterested..", this.state.userInterested);
-                console.log("data below is ...", data);
+                axios.get(url).then((response)=>{
+                    console.log("interestedusers .....", response);
+                    let data = response && response.data;
+                    console.log("usersinterested..", this.state.userInterested);
+                    console.log("data below is ...", data);
 
-                let mergedData = [...this.state.userInterested,...data];
-                console.log("mergedData...",mergedData);
-                this.setState({
-                    userInterested :mergedData
+                    let mergedData = [...this.state.userInterested,...data];
+                    console.log("mergedData...",mergedData);
+                    this.setState({
+                        userInterested :mergedData
+                    })
+
                 })
+            }
+            }
 
-            })
-        }
 
     }
 
@@ -121,8 +173,6 @@ export default class Dashboard extends  React.Component{
                   suggestions: response && response.data
                 })
             })
-
-
     }
     callUserDataApi=()=>{
         let baseUrl = config.apiUrl;
@@ -135,12 +185,28 @@ export default class Dashboard extends  React.Component{
                     locationId :response && response.data && response.data.locationId
                 },()=>{
                     this.callSuggestionsApi(this.state.userData);
+                    this.callEventsFollowedByUser(this.state.userData);
+                    this.currentLocation(this.state.userData);
                 })
 
             })
 
 
 
+    }
+    callEventsFollowedByUser =(userData)=>{
+     console.log("called");
+     let userId = userData.userId;
+     let baseUrl = config.apiUrl;
+     let url = baseUrl +'showtime/eventsfollowed/'+ userId;
+     axios.get(url)
+         .then((response)=>{
+
+             this.setState({
+                 eventsFollowed: response && response.data,
+
+             })
+         })
     }
 
     callCategoriesApi = async()=>{
@@ -153,6 +219,7 @@ export default class Dashboard extends  React.Component{
                     selectedCategory:response && response.data[0]
 
                 },()=>{
+                    this.callEvents();
                     this.calluserwithcategories(this.state.selectedCategory)
                 })
 
@@ -177,7 +244,8 @@ export default class Dashboard extends  React.Component{
     categoryClick =(category)=>{
         console.log("category ....", category);
         this.setState({
-            selectedCategory:category
+            selectedCategory:category,
+            userInterested:[]
         },()=>{
             this.calluserwithcategories(category);
             this.callEvents();
@@ -206,6 +274,38 @@ export default class Dashboard extends  React.Component{
             })
     }
 
+    callLocationChangeApi=(locationId)=> {
+        let baseUrl = config.apiUrl;
+        let url = baseUrl +'showtime/changelocation';
+        let userData = JSON.parse(localStorage.getItem('userData'));
+        let dataToApi ={
+            'userId':userData && userData.userId,
+            'locationId':this.state.locationId
+
+        }
+
+        let locationData = this.state.options.filter((data) => data.id  === locationId);
+        axios.post(url,dataToApi)
+            .then((response)=>{
+                let localStoargeUserDta = JSON.parse(localStorage.getItem('userData'));
+                let obj = {
+                   'firstName': localStoargeUserDta.firstName,
+                    'lastName':localStoargeUserDta.lastName,
+                    'locationId':locationId,
+                    'userId':localStoargeUserDta.userId
+                }
+
+
+
+              localStorage.removeItem('userData');
+              localStorage.setItem('userData',JSON.stringify(obj));
+
+              this.setState({
+                  currentLocation : locationData
+              })
+            })
+    }
+
 
     markInterested =(data)=>{
         console.log("data is ", data);
@@ -226,27 +326,67 @@ export default class Dashboard extends  React.Component{
                   interested : [...this.state.interested,dataToApi.eventId]
                })
             })
+    }
 
+    logOut =() =>{
+
+        console.log("Logout Clicked");
+        let refreshToken = localStorage.getItem('refreshToken');
+        let userName = localStorage.getItem('username');
+        let dataToApi ={
+            "refreshToken": refreshToken,
+            "username":userName
+        };
+
+        let baseUrl = config.apiUrl;
+        let url = baseUrl + "auth/logout";
+        axios.post(url,dataToApi).
+            then((response)=>{
+                localStorage.clear();
+                this.props.history.push('/login')
+        })
 
 
 
     }
 
+    valueExists =(value) =>{
+       return this.state.eventsFollowed.some(function(el){
+          return el.eventId === value
+       });
+    }
+
+     changeLocation=(event)=> {
+
+        let value =event.target.value ;
+        let locationData = this.state.options.filter((data) => data.value  === value);
+        console.log("locationData ",locationData);
+        this.setState({
+            location: value ,
+            locationId:locationData && locationData[0] && locationData[0].id
+        },()=>{
+             this.callLocationChangeApi(this.state.locationId);
+        });
+    }
+
+
+
+
 
     render(){
         console.log("state" ,this.state);
         let categoryName;
-        const {categories,userswithcategories,suggestions,events,userData} = this.state;
+        const {categories,userswithcategories,suggestions,events,userData,options} = this.state;
         return(
-            <div style={{backgroundColor:'black' ,minHeight:"1000px"}} >
-                <header >
+            <div style={{backgroundColor:'black' ,minHeight:"1000px",}} >
+                <header style={{display:"grid"}} >
 
-                        <Toolbar style={{backgroundColor:'red'}}>
+                        <Toolbar style={{backgroundColor:'red',display:"grid"}}>
                             <div style={{
                                 display: 'flex',
                                 justifyContent: 'center'
                             }}>
-                                <Typography>
+                                <Typography style={{fontSize:"22px",fontColor:"green"}}>
                                     Show Time
                                 </Typography>
                             </div>
@@ -261,9 +401,29 @@ export default class Dashboard extends  React.Component{
                 <Typography style={{color:'green'}}>
                     {userData.firstName} {userData.lastName}
                 </Typography>
-                <StyledButton>
+                <select  placeholder="select a city" value={this.state.location} onChange={this.changeLocation}>
+
+                    {
+                        options && options.map((data)=>{
+                            return(
+
+                                <option value={data.value}>
+                                    {data.label}
+                                </option>
+                            )
+                        })
+                    }
+
+
+                </select>
+
+                <StyledButton onClick ={()=> this.logOut()}>
                     Logout
                 </StyledButton>
+
+
+
+
             <div style={{
                 display:'flex',
                 flexDirection:'row',
@@ -292,10 +452,6 @@ export default class Dashboard extends  React.Component{
                     })
 
                 }
-
-
-
-
 
             </div>
 
@@ -354,10 +510,12 @@ export default class Dashboard extends  React.Component{
                                     Users Following  {item && item.eventName}
                                   </AccordionItemButton>
                                   </AccordionItemHeading>
-                                  {console.log("inside jsx", InterestedUsers)}
+                                  {console.log("inside jsx", this.state.userInterested)}
 
                                   <AccordionItemPanel style={{'color':"darkgreen"}}>
                                       {
+
+                                          this.state.userInterested.length >0 ?
                                           <div>
                                               {
                                                   this.state.userInterested && this.state.userInterested.filter((data)=>data.eventId == item.eventId).map((data)=>{
@@ -370,6 +528,10 @@ export default class Dashboard extends  React.Component{
                                                   })
                                               }
                                           </div>
+                                              :
+                                              <div>
+                                                  No user interested in this event
+                                              </div>
 
 
                                       }
@@ -436,9 +598,22 @@ export default class Dashboard extends  React.Component{
                                              </div>
 
                                           </CardContent>
-                                          <CardActions>
-                                              <Button onClick ={()=>{this.markInterested(item)}} size="small">Click to Mark Interested</Button>
-                                          </CardActions>
+
+
+                                          {
+                                              this.valueExists(item.eventId) === false?
+                                                  <div>
+                                                      <CardActions>
+                                                          <Button onClick ={()=>{this.markInterested(item)}} size="small">Click to Mark Interested</Button>
+                                                      </CardActions>
+                                                  </div>:
+                                                  <div>
+                                                      <Button> You have marked it Interested</Button>
+                                                  </div>
+
+                                          }
+
+
                                       </Card>
                                   )
                               })
@@ -459,24 +634,38 @@ export default class Dashboard extends  React.Component{
                     Categories Suggested For You
                     <div>
                         {
-                            suggestions && suggestions.map ((item)=>{
-                                return(
+                            suggestions && suggestions.length > 0 ?
+                                <div>
 
-                                    <Card style={{margin:20}}>
-                                        <CardContent>
-                                            <Typography>
-                                                {item.categoryName}
-                                            </Typography>
-                                            <StyledButton onClick={()=>{this.followCategory(item)}}>
-                                                Follow
-                                            </StyledButton>
-                                        </CardContent>
-                                    </Card>
+                                    {
 
-                                )
-                            })
+                                        suggestions && suggestions.map((item) => {
+                                            return (
 
+                                                <Card style={{margin: 20}}>
+                                                    <CardContent>
+                                                        <Typography>
+                                                            {item.categoryName}
+                                                        </Typography>
+                                                        <StyledButton onClick={() => {
+                                                            this.followCategory(item)
+                                                        }}>
+                                                            Follow
+                                                        </StyledButton>
+                                                    </CardContent>
+                                                </Card>
+
+                                            )
+                                        })
+
+                                    }
+                                </div>
+                                :
+                                <div>
+                                    You have followed all the categories
+                                </div>
                         }
+
                     </div>
 
                 </div>
@@ -486,6 +675,7 @@ export default class Dashboard extends  React.Component{
 
         )
     }
+
 
 
 }

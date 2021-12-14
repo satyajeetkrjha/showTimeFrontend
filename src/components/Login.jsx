@@ -36,6 +36,7 @@ class Login extends React.Component{
             console.log("response ... ", response);
             if(response && response.status == 200){
                 let data = response && response.data;
+                console.log("login data .....",data);
                 localStorage.setItem('token', data && data.authenticationToken);
                 localStorage.setItem('username',data && data.username);
                 localStorage.setItem('refreshToken', data && data.refreshToken)
