@@ -4,6 +4,8 @@ import styled from "styled-components";
 import { makeStyles } from '@material-ui/core/styles';
 import { withStyles } from '@material-ui/core/styles';
 import {Button} from 'react';
+import {Toolbar} from "@material-ui/core";
+import Typography from "@mui/material/Typography";
  class Signup extends React.Component{
     constructor(props) {
         super(props);
@@ -113,8 +115,25 @@ import {Button} from 'react';
 
 
         return(
-            <Root>
-            <FirstRoot>
+            <div>
+                <div>
+                    <header style={{display:""}} >
+
+                        <Toolbar style={{backgroundColor:'red',display:"grid"}}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'center'
+                            }}>
+                                <Typography style={{fontSize:"22px",fontColor:"green"}}>
+                                    Show Time
+                                </Typography>
+                            </div>
+
+                        </Toolbar>
+                    </header>
+                </div>
+
+                <FirstRoot  style={{backgroundColor:'chocolate'}}>
               <form onSubmit={this.handleSubmit}>
                   <div>
                       <Names>
@@ -172,7 +191,7 @@ import {Button} from 'react';
               </form>
             </FirstRoot>
 
-            </Root>
+            </div>
 
 
         )
@@ -192,7 +211,7 @@ const FirstRoot = styled.div`
 `;
 
  const Root = styled.div`
-   
+   backgroundColor:'chocolate'
  `
 
  const Names = styled.div`

@@ -2,6 +2,8 @@ import React from 'react'
 import styled from "styled-components";
 import {makeStyles, withStyles} from "@material-ui/core/styles";
 import http from "../services/httpService";
+import {Toolbar} from "@material-ui/core";
+import Typography from "@mui/material/Typography";
 class Login extends React.Component{
     constructor(props) {
         super(props);
@@ -57,7 +59,25 @@ class Login extends React.Component{
         const {requestFailed} = this.state ;
         return(
             <Root>
-                <FirstRoot>
+                <div>
+                    <header style={{display:""}} >
+
+                        <Toolbar style={{backgroundColor:'red',display:"grid"}}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'center'
+                            }}>
+                                <Typography style={{fontSize:"22px",fontColor:"green"}}>
+                                    Show Time
+                                </Typography>
+                            </div>
+
+                        </Toolbar>
+                    </header>
+                </div>
+
+                <FirstRoot style={{backgroundColor:'chocolate'}}>
+
                     <form onSubmit={this.handleSubmit}>
                         <div>
                             <Names>UserName</Names>
@@ -90,7 +110,7 @@ const FirstRoot = styled.div`
 `;
 
 const Root = styled.div`
-   
+   background-color: chocolate;
  `
 
 const Names = styled.div`

@@ -41,19 +41,36 @@ export default class Dashboard extends  React.Component{
             userInterested:[],
             eventsFollowed:[],
             options:[],
-            currentLocation :null
+            currentLocation :null,
+            trendingEvents:[]
 
         }
 
 
     }
     componentDidMount () {
-        this.callCategoriesApi();
         this.callUserDataApi();
+        this.callCategoriesApi();
         this.callLocationsApi();
+        this.callTrendingEvents();
+        setInterval(this.callTrendingEvents, 30000);
 
 
 
+
+
+    }
+    callTrendingEvents=()=>{
+
+        let baseUrl = config.apiUrl;
+
+        let url = baseUrl;
+        url +='showtime/trendingevents'
+        axios.get(url).then((response)=>{
+            this.setState({
+                trendingEvents: response && response.data
+            })
+        })
     }
     currentLocation =(data)=>{
 
@@ -61,22 +78,25 @@ export default class Dashboard extends  React.Component{
         let locationId = userData && userData.locationId;
         let baseUrl = config.apiUrl;
 
-        let url ;
+        let url;
+        debugger
         if(!locationId){
             url = baseUrl+'showtime/location/'+data.locationId;
         }
         else{
             url = baseUrl +'showtime/location/'+ locationId;
         }
-
-
-
-
         axios.get(url).then((response)=>{
+            let data = response && response.data ;
             this.setState({
-                currentLocation : response && response.data
+                currentLocation : data
             })
         })
+
+
+
+
+
     }
     callLocationsApi = async () => {
         let url = 'showtime/locations';
@@ -302,6 +322,8 @@ export default class Dashboard extends  React.Component{
 
               this.setState({
                   currentLocation : locationData
+              },()=>{
+                  window.location.reload();
               })
             })
     }
@@ -324,6 +346,8 @@ export default class Dashboard extends  React.Component{
             .then((response)=>{
                this.setState({
                   interested : [...this.state.interested,dataToApi.eventId]
+               },()=>{
+                   window.location.reload();
                })
             })
     }
@@ -376,9 +400,9 @@ export default class Dashboard extends  React.Component{
     render(){
         console.log("state" ,this.state);
         let categoryName;
-        const {categories,userswithcategories,suggestions,events,userData,options} = this.state;
+        const {categories,userswithcategories,suggestions,events,userData,options,trendingEvents} = this.state;
         return(
-            <div style={{backgroundColor:'black' ,minHeight:"1000px",}} >
+            <div style={{backgroundColor:'chocolate' ,minHeight:"1000px",}} >
                 <header style={{display:"grid"}} >
 
                         <Toolbar style={{backgroundColor:'red',display:"grid"}}>
@@ -387,21 +411,34 @@ export default class Dashboard extends  React.Component{
                                 justifyContent: 'center'
                             }}>
                                 <Typography style={{fontSize:"22px",fontColor:"green"}}>
-                                    Show Time
+                                    Show Time ({this.state.currentLocation && this.state.currentLocation.locationName})
                                 </Typography>
                             </div>
 
                         </Toolbar>
                 </header>
+                <div style={{display:'flex',justifyContent:'flex-end',alignItems:'end'}}>
+
+
+                    <div style={{marginRight:'20px'}}>
                 <ProfileImageBox
                     alt="Alt Text"
 
                     onFileChange={(e) => this.onFileChange(e, {type: 'user-image'})}
                     src={this.state.src}/>
-                <Typography style={{color:'green'}}>
-                    {userData.firstName} {userData.lastName}
+                    </div>
+                    <div>
+                <Typography style={{fontSize:'22px', color:'white',marginTop:'50px',marginRight:'20px'}}>
+                   <div>
+                       {userData.firstName} {userData.lastName}
+                    </div>
+
                 </Typography>
-                <select  placeholder="select a city" value={this.state.location} onChange={this.changeLocation}>
+                    </div>
+                </div>
+                <div style={{display:"flex" ,justifyContent :"flex-end"}}>
+                <div style={{marginRight:'auto',marginLeft:'50px'}}>
+                <select style={{fontSize:'x-large'}}  placeholder="select a city" value={this.state.location} onChange={this.changeLocation}>
 
                     {
                         options && options.map((data)=>{
@@ -416,10 +453,16 @@ export default class Dashboard extends  React.Component{
 
 
                 </select>
+                </div>
 
-                <StyledButton onClick ={()=> this.logOut()}>
-                    Logout
-                </StyledButton>
+
+               <div style={{marginTop:'20px',marginRight:'10px'}}>
+                   <StyledButton onClick ={()=> this.logOut()}>
+                       Logout
+                   </StyledButton>
+               </div>
+                </div>
+
 
 
 
@@ -469,9 +512,13 @@ export default class Dashboard extends  React.Component{
                 }}>
 
 
-                    <Typography style={{color:'white'}}>
-                        User following this category
+
+                    <Typography style={{color:'white',marginTop:'20px'}}>
+                        User following {this.state.selectedCategory  && this.state.selectedCategory.categoryName}
                     </Typography>
+                    <div style={{marginTop:'100px'}}>
+
+
 
                         {
                             userswithcategories && userswithcategories.map((item)=>{
@@ -479,7 +526,7 @@ export default class Dashboard extends  React.Component{
                                     <Card style={{margin:20}}>
                                     <CardContent>
                                         <Typography style={{color:'blue'}}>
-                                            {item.firstName} {'   '} {item.lastName}
+                                            {item.firstName} {   item.lastName}
                                         </Typography>
                                     </CardContent>
                                     </Card>
@@ -488,10 +535,18 @@ export default class Dashboard extends  React.Component{
 
 
                         }
+                    </div>
 
                 </div>
+                  <div>
 
-                  <Accordion allowMultipleExpanded>
+                      <div style={{color:'white',marginTop:'20px'}}>
+                         Recommended Users
+                      </div>
+
+
+
+                  <Accordion style={{height:"max-content",marginTop:'85px'}} allowMultipleExpanded>
 
 
                   {
@@ -504,7 +559,7 @@ export default class Dashboard extends  React.Component{
 
 
                           return(
-                              <AccordionItem onClick={()=> this.callInterestedUsers(item && item.eventId)} style={{'width':'200px'}}>
+                              <AccordionItem style={{height:"max-content"}}  onClick={()=> this.callInterestedUsers(item && item.eventId)} style={{'width':'200px'}}>
                                   <AccordionItemHeading>
                                   <AccordionItemButton >
                                     Users Following  {item && item.eventName}
@@ -521,8 +576,8 @@ export default class Dashboard extends  React.Component{
                                                   this.state.userInterested && this.state.userInterested.filter((data)=>data.eventId == item.eventId).map((data)=>{
 
                                                       return(
-                                                          <div>
-                                                              {data.firstName}+{data.lastName}
+                                                          <div style={{fontSize:'18px',color:'blue'}}>
+                                                               {data.firstName}{"   "}{data.lastName}
                                                           </div>
                                                       )
                                                   })
@@ -546,25 +601,83 @@ export default class Dashboard extends  React.Component{
 
                   }
                   </Accordion>
-
-
-
-
-
-
-
+                  </div>
 
 
 
                   <div style={{
-                      margin:20
+                      margin:20,
+
                   }}>
-                      <p>Events for this {
+                      <div style={{marginLeft:'100px',color:'white'}} >Trending Events</div>
+
+                      <div style={{maxWidth:'300px'}} >
+                          {
+
+                              trendingEvents && trendingEvents.map((item)=>{
+                                  return(
+                                      <Card sx={{ minWidth: 275,margin:10 }}>
+                                          <CardContent>
+                                              <div  style={{display:'flex'}}>
+                                                  <Typography>
+                                                      Event Name :
+                                                  </Typography>
+                                                  <Typography>
+                                                      {'  '} {item.eventName}
+                                                  </Typography>
+                                              </div>
+
+                                              <div style={{display:'flex'}}>
+                                                  <Typography>
+                                                      StartDate :
+                                                  </Typography>
+                                                  <Typography>
+                                                      {' '} {item.startDate}
+                                                  </Typography>
+                                              </div>
+                                              <div style={{display:'flex'}}>
+                                                  <Typography>
+                                                      EndDate :
+                                                  </Typography>
+                                                  <Typography>
+                                                      {' '}{item.endDate}
+                                                  </Typography>
+                                              </div>
+                                              <div style={{display:'flex'}}>
+                                                  <Typography>
+                                                      TotalUsers :
+                                                  </Typography>
+                                                  <Typography>
+                                                      {' '}{item.totalUsers}
+                                                  </Typography>
+                                              </div>
+
+                                          </CardContent>
+
+
+
+
+
+                                      </Card>
+                                  )
+                              })
+
+
+                          }
+
+                      </div>
+                  </div>
+
+                  <div style={{
+                      margin:20,
+
+                  }}>
+                      <div style={{marginLeft:'100px',color:'white'}} >Events for this {
                           this.state.selectedCategory.categoryName &&
                           this.state.selectedCategory.categoryName.toUpperCase()
-                      }</p>
+                      }</div>
 
-                      <div >
+                      <div style={{maxWidth:'300px'}} >
                           {
 
                               events && events.map((item)=>{
@@ -632,10 +745,10 @@ export default class Dashboard extends  React.Component{
 
                 }}>
                     Categories Suggested For You
-                    <div>
+                    <div style={{marginTop:'80px'}}>
                         {
                             suggestions && suggestions.length > 0 ?
-                                <div>
+                                <div >
 
                                     {
 
@@ -662,7 +775,7 @@ export default class Dashboard extends  React.Component{
                                 </div>
                                 :
                                 <div>
-                                    You have followed all the categories
+                                    You have followed all categories
                                 </div>
                         }
 
